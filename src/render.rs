@@ -14,3 +14,7 @@ pub fn draw_pixel(x: i32, y: i32, color_index: ColorFrameBufferIndex) {
         (*FRAMEBUFFER)[index as usize] |= (color_index as u8) << shift;
     }
 }
+
+pub fn set_2bpp_colors() {
+    unsafe { *DRAW_COLORS = 0x0243 };
+}

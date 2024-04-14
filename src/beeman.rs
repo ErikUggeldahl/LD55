@@ -2,6 +2,7 @@ use crate::{
     bees::Bees,
     input::{is_button_down, is_button_pressed, Button as Btn},
     platform::Platform,
+    render::set_2bpp_colors,
     sprites::*,
     util::{clamp, distance},
     wasm4::*,
@@ -11,13 +12,13 @@ use paste::paste;
 
 const ANIMATION_PERIOD: u8 = 8;
 
-const JUMP_FORCE: f32 = 3.0;
-const MAX_HORIZONTAL_SPEED: f32 = 1.5;
+const JUMP_FORCE: f32 = 2.5;
+const MAX_HORIZONTAL_SPEED: f32 = 1.0;
 const HORIZONTAL_FORCE: f32 = 0.8;
 const GRAVITY: f32 = 0.1;
 
 const BEE_PROXIMITY: f32 = 2.0;
-const BEE_SLOWING: f32 = 0.04;
+const BEE_SLOWING: f32 = 0.06;
 const BEE_X_DISPLACEMENT: f32 = 1.2;
 const BEE_Y_DISPLACEMENT: f32 = 2.0;
 
@@ -31,8 +32,8 @@ enum Facing {
 }
 
 pub struct Beeman {
-    pos_x: f32,
-    pos_y: f32,
+    pub pos_x: f32,
+    pub pos_y: f32,
     vel_x: f32,
     vel_y: f32,
     grounded: bool,
@@ -105,6 +106,18 @@ impl Beeman {
         }
     }
 
+    pub fn init(&mut self, pos_x: f32, pos_y: f32) {
+        self.pos_x = pos_x;
+        self.pos_y = pos_y;
+        self.vel_x = 0.0;
+        self.vel_y = 0.0;
+        self.grounded = false;
+        self.facing = Facing::Right;
+        self.animation = &BEEMAN_STAND_ANIM;
+        self.frame_count = 0;
+        self.frame = 0;
+    }
+
     pub fn movement(&mut self, platforms: &[Platform], bees: &mut Bees) {
         // Left and right
         let mut vel_x = self.vel_x;
@@ -153,7 +166,7 @@ impl Beeman {
         self.pos_y += self.vel_y;
 
         // Bounds
-        self.pos_y = clamp(self.pos_y, 0.0, MAX_POS);
+        // self.pos_y = clamp(self.pos_y, 0.0, MAX_POS);
 
         // Grounding
         if self.pos_y == MAX_POS {
@@ -220,7 +233,7 @@ impl Beeman {
     }
 
     pub fn draw(&mut self) {
-        unsafe { *DRAW_COLORS = 0x0243 };
+        set_2bpp_colors();
 
         let prev_animation = self.animation;
 
