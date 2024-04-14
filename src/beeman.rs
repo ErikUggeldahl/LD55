@@ -48,6 +48,9 @@ enum AnimationType {
     Run,
     Jump,
     Fall,
+    DirectForward,
+    DirectUp,
+    DirectDown,
 }
 
 struct Animation {
@@ -78,6 +81,14 @@ animation!(BEEMAN_STAND_ANIM, Stand, BEEMAN_STAND, 1);
 animation!(BEEMAN_RUN_ANIM, Run, BEEMAN_RUN, 2);
 animation!(BEEMAN_JUMP_ANIM, Jump, BEEMAN_JUMP, 1);
 animation!(BEEMAN_FALL_ANIM, Fall, BEEMAN_FALL, 1);
+animation!(
+    BEEMAN_DIRECT_FORWARD_ANIM,
+    DirectForward,
+    BEEMAN_DIRECT_FORWARD,
+    1
+);
+animation!(BEEMAN_DIRECT_UP_ANIM, DirectUp, BEEMAN_DIRECT_UP, 1);
+animation!(BEEMAN_DIRECT_DOWN_ANIM, DirectDown, BEEMAN_DIRECT_DOWN, 1);
 
 impl Beeman {
     pub fn new() -> Self {
@@ -217,6 +228,22 @@ impl Beeman {
         if self.grounded {
             if self.vel_x.abs() > 0.1 {
                 self.animation = &BEEMAN_RUN_ANIM;
+            } else if is_button_pressed(Btn::One) {
+                let mouse_x = unsafe { *MOUSE_X } as f32;
+                let mouse_y = unsafe { *MOUSE_Y } as f32;
+
+                self.facing = if mouse_x < self.pos_x {
+                    Facing::Left
+                } else {
+                    Facing::Right
+                };
+                self.animation = if mouse_y < self.pos_y - 16.0 {
+                    &BEEMAN_DIRECT_UP_ANIM
+                } else if mouse_y > self.pos_y + 16.0 {
+                    &BEEMAN_DIRECT_DOWN_ANIM
+                } else {
+                    &BEEMAN_DIRECT_FORWARD_ANIM
+                };
             } else {
                 self.animation = &BEEMAN_STAND_ANIM;
             }
