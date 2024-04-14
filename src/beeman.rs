@@ -1,5 +1,6 @@
 use crate::{
-    input::{is_button_pressed, Button as Btn},
+    input::{is_button_down, is_button_pressed, Button as Btn},
+    platform::Platform,
     sprites::{BEEMAN, BEEMAN_HEIGHT, BEEMAN_WIDTH},
     util::clamp,
     wasm4::*,
@@ -35,11 +36,7 @@ impl Beeman {
         self.vel_y += GRAVITY;
     }
 
-    pub fn movement(&mut self) {
-        // Velocity movement
-        self.pos_x += self.vel_x;
-        self.pos_y += self.vel_y;
-
+    pub fn movement(&mut self, platforms: &[Platform]) {
         // Left and right
         let mut vel_x = self.vel_x;
         if is_button_pressed(Btn::Left) && vel_x > -MAX_HORIZONTAL_SPEED {
@@ -55,10 +52,17 @@ impl Beeman {
         self.vel_x = vel_x;
 
         // Jump
-        if self.grounded && is_button_pressed(Btn::Up) {
+        if self.grounded && is_button_down(Btn::Up) {
             self.vel_y = -JUMP_FORCE;
             self.grounded = false;
         }
+
+        // Platform collision
+        self.platform_collision(platforms);
+
+        // Velocity movement
+        self.pos_x += self.vel_x;
+        self.pos_y += self.vel_y;
 
         // Bounds
         self.pos_y = clamp(self.pos_y, 0.0, MAX_POS);
@@ -66,6 +70,27 @@ impl Beeman {
         // Grounding
         if self.pos_y == MAX_POS {
             self.grounded = true;
+            self.vel_y = 0.0;
+        }
+    }
+
+    fn platform_collision(&mut self, platforms: &[Platform]) {
+        if self.vel_y < 0.0 {
+            return;
+        }
+
+        for platform in platforms {
+            if self.pos_x > platform.pos_x
+                && self.pos_x < platform.pos_x + platform.width
+                && (self.pos_y + self.vel_y) as i32 >= platform.pos_y as i32
+                && (self.pos_y + self.vel_y) as i32 <= (platform.pos_y + platform.height) as i32
+            {
+                self.pos_y = platform.pos_y - 1.0;
+                self.vel_y = 0.0;
+                self.grounded = true;
+
+                break;
+            }
         }
     }
 
@@ -79,5 +104,7 @@ impl Beeman {
             BEEMAN_HEIGHT,
             BLIT_2BPP,
         );
+
+        // text(format!("v_y: {:.2}", self.vel_y), 0, 0);
     }
 }
