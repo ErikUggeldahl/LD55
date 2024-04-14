@@ -11,7 +11,7 @@ mod sprites;
 mod util;
 
 use beeman::Beeman;
-use bees::{BeePos, BeeVel};
+use bees::Bees;
 use input::{is_button_pressed, update_input, Button as Btn};
 use lazy_static::lazy_static;
 use platform::Platform;
@@ -27,8 +27,7 @@ struct Game {
     rng: SmallRng,
     beeman: Beeman,
     platforms: Vec<Platform>,
-    bee_pos: Vec<BeePos>,
-    bee_vel: Vec<BeeVel>,
+    bees: Bees,
 }
 
 lazy_static! {
@@ -36,8 +35,7 @@ lazy_static! {
         rng: SmallRng::seed_from_u64(0),
         beeman: Beeman::new(),
         platforms: vec![Platform::new(24.0, 120.0, 48.0, 8.0),],
-        bee_pos: Vec::with_capacity(BEE_COUNT),
-        bee_vel: Vec::with_capacity(BEE_COUNT),
+        bees: Bees::new(),
     }));
 }
 
@@ -47,10 +45,9 @@ fn start() {
         *PALETTE = [0x471e4c, 0x876bb2, 0xffefff, 0xf7b58c];
     }
 
-    let mut rng = SmallRng::seed_from_u64(0);
     let mut game = GAME.lock().unwrap().take().unwrap();
 
-    bees::init(&mut game.bee_pos, &mut game.bee_vel, &mut rng);
+    game.bees.init(&mut game.rng);
 
     GAME.lock().unwrap().replace(game);
 }
@@ -60,24 +57,22 @@ fn update() {
     let mut game = GAME.lock().unwrap().take().unwrap();
 
     if is_button_pressed(Btn::One) {
-        bees::influence(&mut game.bee_pos, &mut game.bee_vel);
+        game.bees.influence();
     }
 
-    bees::movement(&mut game.bee_pos, &mut game.bee_vel, &mut game.rng);
+    game.bees.movement(&mut game.rng);
+    game.beeman.movement(&game.platforms, &mut game.bees);
+
+    update_input();
 
     unsafe { *DRAW_COLORS = 0x2 };
     line(80, 0, 80, 160);
     line(0, 80, 160, 80);
 
-    game.beeman.gravity();
-    game.beeman.movement(&game.platforms);
-
-    update_input();
-
     for platform in &game.platforms {
         platform.draw();
     }
-    bees::draw(&game.bee_pos);
+    game.bees.draw();
     game.beeman.draw();
 
     GAME.lock().unwrap().replace(game);
