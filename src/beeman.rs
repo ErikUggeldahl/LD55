@@ -10,8 +10,6 @@ use crate::{
 };
 use paste::paste;
 
-const ANIMATION_PERIOD: u8 = 8;
-
 const JUMP_FORCE: f32 = 2.5;
 const MAX_HORIZONTAL_SPEED: f32 = 1.0;
 const HORIZONTAL_FORCE: f32 = 0.8;
@@ -39,7 +37,6 @@ pub struct Beeman {
     grounded: bool,
     facing: Facing,
     animation: &'static Animation,
-    frame_count: u8,
     frame: u8,
 }
 
@@ -101,7 +98,6 @@ impl Beeman {
             grounded: false,
             facing: Facing::Right,
             animation: &BEEMAN_STAND_ANIM,
-            frame_count: 0,
             frame: 0,
         }
     }
@@ -114,11 +110,10 @@ impl Beeman {
         self.grounded = false;
         self.facing = Facing::Right;
         self.animation = &BEEMAN_STAND_ANIM;
-        self.frame_count = 0;
         self.frame = 0;
     }
 
-    pub fn movement(&mut self, platforms: &[Platform], bees: &mut Bees) {
+    pub fn update(&mut self, platforms: &[Platform], bees: &mut Bees, new_frame: bool) {
         // Left and right
         let mut vel_x = self.vel_x;
         if is_button_pressed(Btn::Left) && vel_x > -MAX_HORIZONTAL_SPEED {
@@ -165,9 +160,6 @@ impl Beeman {
         self.pos_x += self.vel_x;
         self.pos_y += self.vel_y;
 
-        // Bounds
-        // self.pos_y = clamp(self.pos_y, 0.0, MAX_POS);
-
         // Grounding
         if self.pos_y == MAX_POS {
             self.grounded = true;
@@ -175,10 +167,7 @@ impl Beeman {
         }
 
         // Advance frame
-        self.frame_count += 1;
-        if self.frame_count == ANIMATION_PERIOD {
-            self.frame_count = 0;
-
+        if new_frame {
             self.frame += 1;
             if self.frame == self.animation.frame_count {
                 self.frame = 0;

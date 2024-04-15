@@ -57,6 +57,7 @@ impl Tile {
     }
 
     fn draw(&self) {
+        unsafe { *DRAW_COLORS = 0x2 };
         blit_sub(
             &BACKGROUND,
             self.x as i32,
